@@ -1,0 +1,21 @@
+<div class="bonsai">
+  <h1>Subpages for page: <%= @current.title %></h1>
+  <ul class="tree_folder">
+    <% for page in find_level_depth(@page.get_children_tree(@current)) %>
+      <%if !@lvl.nil? and @lvl < page.level %>
+        <div class="tree_items" onclick="Element.toggle('tree_folder<%=page.id%>')">
+         <%= image_tag('icons/page_white_stack.png', :alt => '')%> </div><ul>
+          <div id="tree_folder<%=page.id%>" class="tree_list">
+      <% end %>
+      <%if !@lvl.nil? and @lvl > page.level %>
+            </div>
+        </ul>
+      <% end %>
+      <li>
+          <%= link_to_page page %>
+        </li>
+
+      <% @lvl = page.level%>
+    <% end %>
+  </ul>
+</div>

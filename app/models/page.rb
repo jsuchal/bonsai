@@ -11,6 +11,20 @@ class Page < ActiveRecord::Base
   has_many :manager_groups, :through => :page_permissions, :class_name => 'Group', :source => :group, :conditions => ['page_permissions.can_manage = ?', true]
 
   has_many :uploaded_files, :dependent => :destroy
+  attr_accessor :level
+
+  def get_page id
+      Page.all(:conditions => ["id = ?", id])
+  end
+
+  def get_siblings
+    Page.all(:conditions => ["parent_id IS NOT NULL and parent_id = ?", self.id])
+  end
+
+  def get_children_tree page
+    Page.all(:conditions => ["(lft BETWEEN ? AND ?)", page.lft, page.rgt],
+                :order => "lft")
+  end
 
   def self.find_by_path path
     full_path = [nil] + path

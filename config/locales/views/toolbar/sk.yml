@@ -1,0 +1,16 @@
+sk:
+  login: "Login"
+  btn_log_in: "Prihlásiť"
+  password: "Heslo:"
+  logged_as: "Prihlásený ako: "
+  log_out: "Odhlásiť"
+  view: "Zobrazenie"
+  history: "História"
+  edit: "Editovať"
+  manage: "Manažment"
+  files: "Súbory"
+  groups: "Skupiny"
+  dashboard: "Dashboard"  #TODO: kratky a vystizny nazov v sk
+  summary: "Sumár"
+  return: "Návrat na stránku"
+  rss_feed: "RSS kanál"

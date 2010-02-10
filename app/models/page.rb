@@ -12,6 +12,21 @@ class Page < ActiveRecord::Base
 
   has_many :uploaded_files, :dependent => :destroy
 
+  def get_children_tree page,user
+    Page.find_by_sql("SELECT  p.* FROM pages p
+                      left join (
+                      select page_id,
+                             count(can_view) sum_can_view,
+                             count(can_edit) sum_can_edit 
+                      from page_permissions group by page_id) w on w.page_id=p.id
+                      left join page_permissions a on a.page_id=p.id and (sum_can_view!=0 or sum_can_edit!=0)
+                      left join groups q
+                      ON q.id = a.group_id and q.name='#{user}' and (a.can_view=1 or a.can_edit=1 or a.can_manage=1)
+                      where (p.lft BETWEEN #{page.lft} AND #{page.rgt})
+                      and ((sum_can_view=0 and sum_can_edit=0)or (q.id is not null))
+                      order by p.lft")
+  end 
+
   def self.find_by_path path
     full_path = [nil] + path
     parent_id = nil
@@ -24,11 +39,17 @@ class Page < ActiveRecord::Base
   end
 
   def get_path
-    self.self_and_ancestors.collect {|node| node.sid}.join('/') + '/'
+    self_and_ancestors.collect(&:sid).join('/') + '/'
+  end
+
+  def get_rel_path
+    path = self_and_ancestors.collect(&:sid)
+    path.shift
+    path
   end
 
   def full_title
-    self.self_and_ancestors.collect {|node| node.title}.reverse.join(' | ')
+    self_and_ancestors.collect(&:title).reverse.join(' | ')
   end
 
   def resolve_layout
@@ -44,14 +65,25 @@ class Page < ActiveRecord::Base
     latest_part_revision.nil? ? nil : latest_part_revision.body
   end
 
-  def files
-    uploaded_file_names = self.uploaded_files.collect(&:filename)
-    path = 'shared/upload' + get_path
-    entries = File.directory?(path) ? Dir.entries(path) : []
-    files_from_file_system = entries.reject do |file|
-      uploaded_file_names.include?(file) or !File.file?(path + file) 
+  def get_page_parts_by_date date
+    page_parts = []
+    for part in self.page_parts
+      current_part = part.page_part_revisions.find(:first, :conditions => ['created_at <= ?', date], :order => "id DESC")
+      page_parts << current_part if current_part
     end
-    self.uploaded_files + files_from_file_system
+    return page_parts
+  end
+
+  def files
+    path = 'shared/upload' + get_path
+    entries = []
+    entries = Dir.entries(path).select {|file| File.file?(path + file) } if File.directory?(path)
+    uploaded_filenames = uploaded_files.collect(&:filename)
+    files_without_db_entry = entries.collect do |file|
+      UploadedFile.new(:filename => file) unless uploaded_filenames.include?(file)
+    end
+    uploaded = uploaded_files.select {|file| entries.include?(file.filename)}
+    (files_without_db_entry.compact + uploaded).sort_by(&:filename)
   end
 
   def add_viewer group

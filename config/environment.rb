@@ -5,12 +5,13 @@
 # ENV['RAILS_ENV'] ||= 'production'
 
 # Specifies gem version of Rails to use when vendor/rails is not present
-RAILS_GEM_VERSION = '2.3.4' unless defined? RAILS_GEM_VERSION
+RAILS_GEM_VERSION = '2.3.5' unless defined? RAILS_GEM_VERSION
 
 # Bootstrap the Rails environment, frameworks, and default configuration
 require File.join(File.dirname(__FILE__), 'boot')
 
 require 'ldap/simple_ldap'
+require 'diff/simple_diff'
 
 Rails::Initializer.run do |config|
   # Settings in config/environments/* take precedence over those specified here.
@@ -33,7 +34,7 @@ Rails::Initializer.run do |config|
   config.gem 'diff-lcs', :lib => 'diff/lcs'
   config.gem 'maruku'
   config.gem 'chronic', :version => ">= 0.2.3"
-  config.gem 'whenever', :lib => false, :source => "http://gemcutter.org/"
+  config.gem 'whenever'
 
   # Only load the plugins named here, in the order given. By default, all plugins
   # in vendor/plugins are loaded in alphabetical order.

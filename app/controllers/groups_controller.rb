@@ -1,6 +1,6 @@
 class GroupsController < ApplicationController
   before_filter :verify_editor_permission, :only => [:remove, :add]
-  before_filter :verify_editor_permission_by_id, :only => [:destroy, :edit, :update, :make_public, :make_editable]
+  before_filter :verify_editor_permission_by_id, :only => [:destroy, :edit, :update, :switch_public, :switch_editable]
 
   def verify_editor_permission_by_id
     redirect_to groups_path unless @current_user.can_edit_group? Group.find_by_id(params[:id])
@@ -11,21 +11,41 @@ class GroupsController < ApplicationController
   end
 
   def autocomplete_for_user
-    @users = User.all(:conditions => ["username LIKE ?", "#{params[:prefix]}%"], :limit => 10, :order => 'username')
+    @infix = params[:infix]
+    @users = User.all(:conditions => ["name LIKE :infix OR username LIKE :infix", {:infix => "%#{@infix}%"}], :limit => 10, :order => 'username')
     render :partial => 'autocomplete_users'
   end
-  def autocomplete_for_groups
-      @groups = Group.all(:conditions => ["name LIKE ?", "#{params[:prefix]}%"], :limit => 10, :order => 'name')
-      render :partial => 'autocomplete_groups'
-    end
   
+  def autocomplete_for_groups
+    @infix = params[:infix]
+    groups = Group.all(:joins => {:group_permissions => :user}, :conditions => ["groups.name LIKE :infix OR users.name LIKE :infix OR users.username LIKE :infix", {:infix => "%#{@infix}%"}], :group => :id, :limit => 10)
+    @auto_groups = groups.select do |group|
+      group.is_public? or group.users.include?(@current_user)      
+    end
+    render :partial => 'autocomplete_groups'
+   end  
 
   # GET /groups
   # GET /groups.xml
   def index
-    @groups = @current_user.visible_groups + Group.groups_visible_for_all
+    if params.include? 'back'
+      session[:link_back] = params['back']
+      redirect_to groups_path
+      return
+    end
+    if @current_user.instance_of?(AnonymousUser)
+      return render(:template => 'page/unprivileged')
+    end
+    #@groups = @current_user.visible_groups + Group.groups_visible_for_all
     #uniq! removes duplicate elements from self but returns nil if no changes are made (that is, no duplicates are found).
-    @groups = @groups.uniq!.nil? ? (@current_user.visible_groups + Group.groups_visible_for_all):@groups
+    #@groups = @groups.uniq!.nil? ? (@current_user.visible_groups + Group.groups_visible_for_all):@groups
+
+    stmnt =  "SELECT group_permissions.group_id as id, groups.name  FROM group_permissions JOIN groups on group_permissions.group_id = groups.id LEFT JOIN users on users.username = groups.name where user_id = ??? and users.id is null"
+    stmnt["???"] = @current_user.id.to_s()
+    visible_for_user = Group.find_by_sql(stmnt)
+    public =  Group.find_by_sql("SELECT group_permissions.group_id as id, groups.name  FROM group_permissions JOIN groups on group_permissions.group_id = groups.id LEFT JOIN users ON users.username = groups.name WHERE ((group_permissions.can_view = 0 OR group_permissions.can_view = NULL) AND users.id is null) ")
+    @groups = visible_for_user + public
+    @groups = @groups.uniq!.nil? ? (visible_for_user + public):@groups
 
     respond_to do |format|
       format.html # index.html.erb
@@ -56,7 +76,7 @@ class GroupsController < ApplicationController
     respond_to do |format|
       if @group.save
         @group.add_editor @current_user
-        flash[:notice] = 'Group was successfully created.'
+        flash[:notice] = t(:group_created)
         format.html { redirect_to edit_group_path(@group) }
         format.xml  { render :xml => @group, :status => :created, :location => @group }
       else
@@ -73,7 +93,7 @@ class GroupsController < ApplicationController
 
     respond_to do |format|
       if @group.update_attributes(params[:group])
-        flash[:notice] = 'Group was successfully updated.'
+        flash[:notice] = t(:group_updated)
         format.html { redirect_to groups_path }
         format.xml  { head :ok }
       else

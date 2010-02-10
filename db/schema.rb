@@ -9,7 +9,14 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20091020204511) do
+ActiveRecord::Schema.define(:version => 20100210132733) do
+
+  create_table "favorites", :force => true do |t|
+    t.integer "user_id", :null => false
+    t.integer "page_id", :null => false
+  end
+
+  add_index "favorites", ["user_id"], :name => "index_favorites_on_user_id"
 
   create_table "group_permissions", :force => true do |t|
     t.integer "user_id",                     :null => false
@@ -19,7 +26,30 @@ ActiveRecord::Schema.define(:version => 20091020204511) do
   end
 
   create_table "groups", :force => true do |t|
-    t.string "name", :null => false
+    t.string  "name",                         :null => false
+    t.boolean "usergroup", :default => false, :null => false
+  end
+
+  create_table "open_id_authentication_associations", :force => true do |t|
+    t.integer "issued"
+    t.integer "lifetime"
+    t.string  "handle"
+    t.string  "assoc_type"
+    t.binary  "server_url"
+    t.binary  "secret"
+  end
+
+  create_table "open_id_authentication_nonces", :force => true do |t|
+    t.integer "timestamp",  :null => false
+    t.string  "server_url"
+    t.string  "salt",       :null => false
+  end
+
+  create_table "page_part_locks", :force => true do |t|
+    t.integer  "part_id"
+    t.integer  "user_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "page_part_revisions", :force => true do |t|
@@ -72,9 +102,10 @@ ActiveRecord::Schema.define(:version => 20091020204511) do
   end
 
   create_table "users", :force => true do |t|
-    t.string "username",               :null => false
-    t.string "name",                   :null => false
-    t.string "token",    :limit => 32, :null => false
+    t.string "username",                      :null => false
+    t.string "name",                          :null => false
+    t.string "token",           :limit => 32, :null => false
+    t.string "prefered_locale"
   end
 
   add_index "users", ["token"], :name => "index_users_on_token", :unique => true

@@ -32,6 +32,12 @@ body {
     color: white;
 }
 
+#toolbar #favorite a {
+    margin-right: 1em;
+    padding: 5px;
+    text-decoration: none;
+    border: 1px solid transparent;
+}
 
 #toolbar .login {
     float: right;
@@ -73,12 +79,16 @@ body {
     margin: 0;
     padding: 0;
 }
-
-.bonsai .line-unchanged {}
-.bonsai .line-changed { background-color: yellow; }
-.bonsai .line-removed { background-color: red; }
-.bonsai .line-added { background-color: green; }
+.bonsai .diff .line {
+    background-color: #F8F8FF;
+    margin: 0.5em 0;
+}
+.bonsai .diff .deletion { background-color: #fdd; }
+.bonsai .diff .addition { background-color: #dfd; }
+.bonsai .diff .line .deletion {background-color: #faa; }
+.bonsai .diff .line .addition {background-color: #afa; }
 .bonsai textarea { width: 100% }
+
 
 
 #holder {
@@ -99,7 +109,7 @@ body {
 }
 
 .autocomplete {
-    width: 250px !important;
+    width: 350px !important;
 }
 
 .autocomplete ul {
@@ -114,9 +124,36 @@ body {
     margin: 0;
     padding: 5px;
     cursor: pointer;
-    cursor: hand;
 }
 
 .autocomplete .selected {
     background-color: #f0f0f0;
+}
+
+.favorite_table {
+    border-collapse:collapse;
+    float:right;
+    margin: 10px;
+    position:relative;
+    right:5%;
+    max-width:30%;
+}
+
+.favorite_table th{
+    background-color: white;
+}
+
+.favorite_table tr:hover{
+    background-color: #f0f0f0;
+}
+
+.dashboard_news {
+    max-width:70%;
+}
+.dashboard_news div {
+   margin: 0 0 20px 10px;
+}
+
+.DashboardTree #user, #time {
+    font-weight:bold;    
 }

@@ -2,7 +2,7 @@ Feature: Secure wiki
   In order to have a secure wiki
   A user
   Should be able to set permissions for viewing, editing and managing pages.
-
+  
   Scenario: Wiki page viewable by one user
     When I go to the main page
     And I login as "johno"
@@ -13,8 +13,7 @@ Feature: Secure wiki
     Then I should see "Some content."
 
   Scenario: Manager can edit page permissions and page
-    When I go to the main page
-    And I login as "johno"
+    Given I am logged in
     And I create "/" page
     Then I should see "Manage"
     And I should see "Edit"
@@ -52,20 +51,17 @@ Feature: Secure wiki
     Then I should not see "Manage"
 
   Scenario: Anonymous can see a public page
-    When I go to the main page
-    And I login as "johno"
-    And I create "/" page
-    And I logout
-    Then I should not see "Permission denied."
-    Then I should see "History"
+     Given I am logged in
+     And I create "/" page
+     And I logout
+     Then I should not see "Permission denied."
+     Then I should see "History"
 
   Scenario: Manager adds an editor to a public page
-    Given user "johno" exists
     Given user "matell" exists
-    Given user "crutch" exists
-    When I go to the main page
-    And I login as "johno"
-    And I create "/" page
+    And user "crutch" exists
+    And I am logged in
+    When I create "/" page
     And I add "matell,johno" editor permission
     And I logout
     And I login as "crutch"
@@ -75,12 +71,10 @@ Feature: Secure wiki
     And I should see "Edit"
 
   Scenario: Manager adds another manager to a public page
-    Given user "johno" exists
     Given user "matell" exists
-    Given user "crutch" exists
-    When I go to the main page
-    And I login as "johno"
-    And I create "/" page
+    And user "crutch" exists
+    And I am logged in
+    When I create "/" page
     And I add "matell" manager permission
     And I logout
     And I login as "crutch"
@@ -90,16 +84,15 @@ Feature: Secure wiki
     And I should see "Manage"
 
   Scenario: Manager adds a viewer to a public page, so it is no longer public
-    Given user "johno" exists
     Given user "matell" exists
-    Given user "crutch" exists
-    When I go to the main page
-    And I login as "johno"
-    And I create "/" page
-    And I follow "Manage"
-    And I fill in "add_group" with "matell"
+    And user "crutch" exists
+    And I am logged in
+    When I create "/" page
+    #And I follow "Manage"
+    #And I fill in "add_group" with "matell"
     #And I select "matell" from "groups_id"
-    And I check "can_view"
+    #And I check "can_view"
+    And I add "matell" reader permission
     And I press "Set"
     And I go to the main page
     Then I should not see "Permission denied."
@@ -112,9 +105,8 @@ Feature: Secure wiki
     
 
   Scenario: Manager adds an editor to a non-public page
-    Given user "johno" exists
     Given user "matell" exists
-    Given user "crutch" exists
+    And user "crutch" exists
     When I go to the main page
     And I login as "johno"
     And I create "/" page
@@ -130,9 +122,8 @@ Feature: Secure wiki
     Then I should see "Permission denied."
 
   Scenario: Manager adds another manager to a non-public page
-    Given user "johno" exists
     Given user "matell" exists
-    Given user "crutch" exists
+    And user "crutch" exists
     When I go to the main page
     And I login as "johno"
     And I create "/" page
@@ -149,9 +140,8 @@ Feature: Secure wiki
     Then I should see "Permission denied."
 
   Scenario: Manager inherits permissions to view a non-public page
-    Given user "johno" exists
     Given user "matell" exists
-    Given user "crutch" exists
+    And user "crutch" exists
     When I go to the main page
     And I login as "johno"
     And I create "/" page
@@ -175,10 +165,9 @@ Feature: Secure wiki
 
   @wip
   Scenario: Editor inherits permissions to view a non-public page
-    Given user "johno" exists
     Given user "matell" exists
-    Given user "crutch" exists
-    Given user "bielikova" exists
+    And user "crutch" exists
+    And user "bielikova" exists
     When I go to the main page
     And I login as "johno"
     And I create "/" page
@@ -197,3 +186,28 @@ Feature: Secure wiki
     Then I should see "Permission denied"
     And I should not see "Edit"
     And I should not see "Manage"
+
+  Scenario: User creates group with 2 users, in autocomplete for groups he/she should see name of group and users in brackets
+    Given user "jozo" exists
+    Given user "fero" exists
+    When I go to the main page
+    And I login as "jano"
+    And I create "/" page
+    And I create "TestGroup" group
+    And I add "jozo" viewer to "TestGroup" group
+    And I add "fero" viewer to "TestGroup" group
+    And I go to /groups/autocomplete_for_groups?infix=Test
+    And I should see "TestGroup"
+    And I should see "jano, jozo, fero"
+
+  Scenario: User creates group with 2 users, in autocomplete for groups he/she should see name of group and users in brackets
+    Given user "jozo" exists
+    Given user "fero" exists
+    When I go to the main page
+    And I login as "jano"
+    And I create "/" page
+    And I create "TestGroup" group
+    And I add "jozo" viewer to "TestGroup" group
+    And I add "fero" viewer to "TestGroup" group
+    And I go to /groups/autocomplete_for_groups?infix=jan
+    And I should see "TestGroup"
